@@ -1,90 +1,118 @@
-import { useQuery } from "@apollo/client";
-import { Contract } from "@ethersproject/contracts";
-import { shortenAddress, useCall, useEthers, useLookupAddress } from "@usedapp/core";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { ethers } from "ethers";
+import IPFS from "ipfs";
 
-import { Body, Button, Container, Header, Image, Link } from "./components";
 import logo from "./ethereumLogo.png";
-
 import { addresses, abis } from "@my-app/contracts";
-import GET_TRANSFERS from "./graphql/subgraph";
 
-function WalletButton() {
-  const [rendered, setRendered] = useState("");
+import "./App.css";
 
-  const { ens } = useLookupAddress();
-  const { account, activateBrowserWallet, deactivate, error } = useEthers();
+const ZERO_ADDRESS =
+  "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-  useEffect(() => {
-    if (ens) {
-      setRendered(ens);
-    } else if (account) {
-      setRendered(shortenAddress(account));
-    } else {
-      setRendered("");
-    }
-  }, [account, ens, setRendered]);
+let node;
 
-  useEffect(() => {
-    if (error) {
-      console.error("Error while connecting wallet:", error.message);
-    }
-  }, [error]);
+const defaultProvider = new ethers.providers.Web3Provider(window.ethereum);
+const ipfsContract = new ethers.Contract(
+  addresses.ipfs,
+  abis.ipfs,
+  defaultProvider
+);
 
-  return (
-    <Button
-      onClick={() => {
-        if (!account) {
-          activateBrowserWallet();
-        } else {
-          deactivate();
-        }
-      }}
-    >
-      {rendered === "" && "Connect Wallet"}
-      {rendered !== "" && rendered}
-    </Button>
+async function initIpfs() {
+  node = await IPFS.create();
+  const version = await node.version();
+  console.log("IPFS Node Version:", version.version);
+}
+
+async function readCurrentUserFile() {
+  const result = await ipfsContract.userFiles(
+    defaultProvider.getSigner().getAddress()
   );
+  console.log({ result });
+
+  return result;
 }
 
 function App() {
-  // Read more about useDapp on https://usedapp.io/
-  const { error: contractCallError, value: tokenBalance } =
-    useCall({
-       contract: new Contract(addresses.ceaErc20, abis.erc20),
-       method: "balanceOf",
-       args: ["0x3f8CB69d9c0ED01923F11c829BaE4D9a4CB6c82C"],
-    }) ?? {};
-
-  const { loading, error: subgraphQueryError, data } = useQuery(GET_TRANSFERS);
+  const [ipfsHash, setIpfsHash] = useState("");
+  useEffect(() => {
+    initIpfs();
+    window.ethereum.enable();
+  }, []);
 
   useEffect(() => {
-    if (subgraphQueryError) {
-      console.error("Error while querying subgraph:", subgraphQueryError.message);
-      return;
+    async function readFile() {
+      const file = await readCurrentUserFile();
+
+      if (file !== ZERO_ADDRESS) setIpfsHash(file);
     }
-    if (!loading && data && data.transfers) {
-      console.log({ transfers: data.transfers });
+    readFile();
+  }, []);
+
+  async function setFile(hash) {
+    const ipfsWithSigner = ipfsContract.connect(defaultProvider.getSigner());
+    const tx = await ipfsWithSigner.setFile(hash);
+    console.log({ tx });
+
+    setIpfsHash(hash);
+  }
+
+  const uploadFile = useCallback(async (file) => {
+    const files = [
+      {
+        path: file.name + file.path,
+        content: file,
+      },
+    ];
+
+    for await (const result of node.add(files)) {
+      await setFile(result.cid.string);
     }
-  }, [loading, subgraphQueryError, data]);
+  }, []);
+
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      uploadFile(acceptedFiles[0]);
+    },
+    [uploadFile]
+  );
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    multiple: false,
+    onDrop,
+  });
 
   return (
-    <Container>
-      <Header>
-        <WalletButton />
-      </Header>
-      <Body>
-        <Image src={logo} alt="ethereum-logo" />
-        <p>
-          Edit <code>packages/react-app/src/App.js</code> and save to reload.
-        </p>
-        <Link href="https://reactjs.org">
-          Learn React
-        </Link>
-        <Link href="https://usedapp.io/">Learn useDapp</Link>
-        <Link href="https://thegraph.com/docs/quick-start">Learn The Graph</Link>
-      </Body>
-    </Container>
+    <div className="App">
+      <header className="App-header">
+        <div {...getRootProps()} style={{ cursor: "pointer" }}>
+          <img src={logo} className="App-logo" alt="react-logo" />
+          <input {...getInputProps()} />
+          {isDragActive ? (
+            <p>Drop the files here ...</p>
+          ) : (
+            <p>
+              Drag 'n' drop some files here to upload to IPFS (or click the
+              logo)
+            </p>
+          )}
+        </div>
+        <div>
+          {ipfsHash !== "" ? (
+            <a
+              href={`https://ipfs.io/ipfs/${ipfsHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              See current user file
+            </a>
+          ) : (
+            "No user file set yet"
+          )}
+        </div>
+      </header>
+    </div>
   );
 }
 
