@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import IPFS from "ipfs";
 
 import logo from "./ethereumLogo.png";
-import { addresses, abis } from "@my-app/contracts";
+import { addresses, abis } from "@project/contracts";
 
 import "./App.css";
 
@@ -27,7 +27,7 @@ async function initIpfs() {
 }
 
 async function readCurrentUserFile() {
-  const result = await ipfsContract.userFiles(
+  const result = await ipfsContract.fileHashes(
     defaultProvider.getSigner().getAddress()
   );
   console.log({ result });
@@ -53,7 +53,7 @@ function App() {
 
   async function setFile(hash) {
     const ipfsWithSigner = ipfsContract.connect(defaultProvider.getSigner());
-    const tx = await ipfsWithSigner.setFile(hash);
+    const tx = await ipfsWithSigner.storeImageHash(hash);
     console.log({ tx });
 
     setIpfsHash(hash);
@@ -108,7 +108,7 @@ function App() {
               See current user file
             </a>
           ) : (
-            "No user file set yet"
+            "No file submitted yet..."
           )}
         </div>
       </header>
