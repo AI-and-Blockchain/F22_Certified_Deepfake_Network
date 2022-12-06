@@ -1,13 +1,20 @@
 import cv2
 import numpy as np
+import flask
 
+from flask_cors import CORS
 from flask import Flask, request
 from model.model import load_model
 
 app = Flask(__name__)
+CORS(
+    app,
+    origins="*"
+)
 
-@app.route("/", methods=['POST'])
+@app.route("/", methods=['POST', 'GET'])
 def predict():
+    # print(request.args.get('path'))
 
     # Read in image
     image = request.files['image'].read()
@@ -22,7 +29,9 @@ def predict():
     score = model.predict(img)
     prediction = round(score)
     
-    return "Success"
+    response = flask.jsonify({'test': ''})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == "__main__":
 
