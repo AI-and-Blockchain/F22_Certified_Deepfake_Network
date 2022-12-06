@@ -14,11 +14,20 @@ const ZERO_ADDRESS =
 let node;
 
 const defaultProvider = new ethers.providers.Web3Provider(window.ethereum);
+
+// IPFS hash storage contract
 const ipfsContract = new ethers.Contract(
   addresses.ipfs,
   abis.ipfs,
   defaultProvider
 );
+
+// Oracle to model API contract
+const oracleContract = new ethers.Contract(
+  addresses.oracle,
+  abis.oracle,
+  defaultProvider
+)
 
 async function initIpfs() {
   node = await IPFS.create();
@@ -51,6 +60,15 @@ function App() {
     readFile();
   }, []);
 
+  // Convert file to base64 for GET request
+  const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
+  // Store ipfs hash in storage smart contract
   async function setFile(hash) {
     const ipfsWithSigner = ipfsContract.connect(defaultProvider.getSigner());
     const tx = await ipfsWithSigner.storeImageHash(hash);
@@ -59,7 +77,25 @@ function App() {
     setIpfsHash(hash);
   }
 
+  // Upload file to IPFS if deemed valid by deepfake model
   const uploadFile = useCallback(async (file) => {
+    const buffer = await file.arrayBuffer();
+    let byteArray = new Int8Array(buffer);
+    
+    console.log(buffer);
+    console.log(byteArray);
+    console.log(await toBase64(file));
+
+    let url = "https://localhost:8000"
+    // let path = await toBase64(file)
+    let path = "10"
+
+    // const oracleWithSigner = oracleContract.connect(defaultProvider.getSigner());
+    // const tx = await oracleWithSigner.requestConfidenceScore(url, path);
+
+    fetch(`${url}?path=${path}`);
+    
+
     const files = [
       {
         path: file.name + file.path,
@@ -93,7 +129,7 @@ function App() {
             <p>Drop the files here ...</p>
           ) : (
             <p>
-              Drag 'n' drop some files here to upload to IPFS (or click the
+              Drag 'n' drop some files here to validate an image (or click the
               logo)
             </p>
           )}
