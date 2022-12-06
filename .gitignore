@@ -1,3 +1,4 @@
 api/test_data
 __pycache__
 .DS_Store
+test.py
