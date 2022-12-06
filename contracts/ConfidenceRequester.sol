@@ -3,56 +3,45 @@ pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+import "hardhat/console.sol";
 
 /**
  * Request testnet LINK and ETH here: https://faucets.chain.link/
  * Find information on LINK Token Contracts and get the latest ETH and LINK faucets here: https://docs.chain.link/docs/link-token-contracts/
  */
 
-contract APIConsumer is ChainlinkClient, ConfirmedOwner {
+/**
+ * THIS IS AN EXAMPLE CONTRACT WHICH USES HARDCODED VALUES FOR CLARITY.
+ * THIS EXAMPLE USES UN-AUDITED CODE.
+ * DO NOT USE THIS CODE IN PRODUCTION.
+ */
+
+contract ConfidenceRequester is ChainlinkClient, ConfirmedOwner {
     using Chainlink for Chainlink.Request;
 
-    uint256 public volume;
-    uint256 private fee;
+    uint256 public confidenceScore;
     bytes32 private jobId;
+    uint256 private fee;
 
-    event RequestVolume(bytes32 indexed requestId, uint256 volume);
+    event RequestConfidenceScore(bytes32 indexed requestId, uint256 confidenceScore);
 
     /**
      * @notice Initialize the link token and target oracle
      *
      * Goerli Testnet details:
      * Link Token: 0x326C977E6efc84E512bB9C30f76E30c160eD06FB
-     * Oracle: 0xCC79157eb46F5624204f47AB42b3906cAA40eaB7 (Chainlink Goerli)
+     * Oracle: 0xCC79157eb46F5624204f47AB42b3906cAA40eaB7 (Chainlink DevRel)
      * jobId: ca98366cc7314957b8c012c72f05aeeb
      *
      */
     constructor() ConfirmedOwner(msg.sender) {
         setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
         setChainlinkOracle(0xCC79157eb46F5624204f47AB42b3906cAA40eaB7);
-
-        //GET > uint256
         jobId = "ca98366cc7314957b8c012c72f05aeeb";
-
-        //GET > bool
-        //jobId "c1c5e92880894eb6b27d3cae19670aa3";
-
-        /*
-        Find other jobs at
-        https://docs.chain.link/any-api/testnet-oracles/
-        */
-
         fee = (1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
     }
 
-    /**
-     * Create a Chainlink request to retrieve API response, find the target
-     * data, then multiply by 1000000000000000000 (to remove decimal places from data).
-     */
-
-     /* parameters support different oracles/jobids (only GET > uint256) */
-    function requestUint256(string memory url, string memory path) public returns (bytes32 requestId) {
-
+    function requestConfidenceScore(string memory url, string memory path) public returns (bytes32 requestId) {
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),
@@ -80,10 +69,10 @@ contract APIConsumer is ChainlinkClient, ConfirmedOwner {
      */
     function fulfill(
         bytes32 _requestId,
-        uint256 _volume
+        uint256 _confidenceScore
     ) public recordChainlinkFulfillment(_requestId) {
-        emit RequestVolume(_requestId, _volume);
-        volume = _volume;
+        emit RequestConfidenceScore(_requestId, _confidenceScore);
+        confidenceScore = _confidenceScore;
     }
 
     /**
