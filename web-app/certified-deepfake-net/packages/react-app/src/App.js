@@ -46,6 +46,7 @@ async function readCurrentUserFile() {
 
 function App() {
   const [ipfsHash, setIpfsHash] = useState("");
+  const [valid, setValid] = useState(true);
   useEffect(() => {
     initIpfs();
     window.ethereum.enable();
@@ -84,37 +85,42 @@ function App() {
     // let byteArray = new Int8Array(buffer);
     // console.log(buffer);
     // console.log(byteArray);
-
-    let url = "http://deepfake-api.herokuapp.com/"
-    let path = await toBase64(file)
-
-    console.log(path)
+    let hash = await toBase64(file)
+    let url = "http://deepfake-api.herokuapp.com/?image=" + hash
+    console.log(url)
 
     // Send b64 string to deepfake model via chainlink oracle
     const oracleWithSigner = oracleContract.connect(defaultProvider.getSigner());
-    let tx1 = await oracleWithSigner.requestConfidenceScore(url, path);
+    let tx1 = await oracleWithSigner.requestConfidenceScore(url, "confidence_score");
     let receipt1 = await tx1.wait(2)
     let event1 = receipt1.events.pop()
-    
     console.log({ event1 });
 
-    
-
-    // DEBUG
-    // fetch(`${url}?path=${path}`);
-    
     // Recieve confidence score from chainlink
+    let tx2 = await oracleContract.confidenceScore();
 
-    const files = [
-      {
-        path: file.name + file.path,
-        content: file,
-      },
-    ];
+    console.log({ tx2 });
 
-    for await (const result of node.add(files)) {
-      await setFile(result.cid.string);
+    let score = tx2.div("0x2386F26FC10000").toNumber();
+    console.log(score);
+
+    // Store image in IPFS node and on StorageTest smart contract
+    if (score >= 50) {
+      const files = [
+        {
+          path: file.name + file.path,
+          content: file,
+        },
+      ];
+
+      for await (const result of node.add(files)) {
+        await setFile(result.cid.string);
+      }
     }
+    else {
+      setValid(false)
+    }
+        
   }, []);
 
   const onDrop = useCallback(
@@ -145,12 +151,26 @@ function App() {
         </div>
         <div>
           {ipfsHash !== "" ? (
+            <b>Submitted image is verified not a deepfake!</b> 
+          ) : (
+            ""
+          )}
+        </div>
+        <div>
+          {valid === false ? (
+            <b>Submitted image is a deepfake!</b> 
+          ) : (
+            ""
+          )}
+        </div>
+        <div>
+          {ipfsHash !== "" ? (
             <a
               href={`https://ipfs.io/ipfs/${ipfsHash}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              See current user file
+              See latest uploaded user file
             </a>
           ) : (
             "No file submitted yet..."
