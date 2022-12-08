@@ -86,7 +86,7 @@ function App() {
     // console.log(buffer);
     // console.log(byteArray);
     let hash = await toBase64(file)
-    let url = "http://deepfake-api.herokuapp.com/?image=" + hash
+    let url = "https://deepfake-api.herokuapp.com/predict?image=" + hash
     console.log(url)
 
     // Send b64 string to deepfake model via chainlink oracle
