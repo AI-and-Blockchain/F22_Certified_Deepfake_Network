@@ -1,5 +1,9 @@
 # F22_Certified_Deepfake_Network
 
+<p align="center">
+  <img src="image.png" />
+</p>
+
 ## Setting up the environment for testing
 ### Dev Setup
 Need yarn to run the react application.
