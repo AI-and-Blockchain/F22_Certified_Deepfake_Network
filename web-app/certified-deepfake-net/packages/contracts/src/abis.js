@@ -1,9 +1,9 @@
 import StorageTest from "./abis/StorageTest.json";
-import GetUint256Contract from "./abis/GetUint256Contract.json";
+import ConfidenceRequester from "./abis/ConfidenceRequester.json";
 
 const abis = {
   ipfs: StorageTest,
-  oracle: GetUint256Contract
+  oracle: ConfidenceRequester
 };
 
 export default abis;

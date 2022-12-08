@@ -84,18 +84,26 @@ function App() {
     // let byteArray = new Int8Array(buffer);
     // console.log(buffer);
     // console.log(byteArray);
-    console.log(await toBase64(file));
 
-    let url = "http://localhost:8000/"
+    let url = "http://deepfake-api.herokuapp.com/"
     let path = await toBase64(file)
 
+    console.log(path)
+
+    // Send b64 string to deepfake model via chainlink oracle
     const oracleWithSigner = oracleContract.connect(defaultProvider.getSigner());
-    const tx = await oracleWithSigner.requestConfidenceScore(url, path);
-    console.log({ tx });
+    let tx1 = await oracleWithSigner.requestConfidenceScore(url, path);
+    let receipt1 = await tx1.wait(2)
+    let event1 = receipt1.events.pop()
+    
+    console.log({ event1 });
+
+    
 
     // DEBUG
     // fetch(`${url}?path=${path}`);
     
+    // Recieve confidence score from chainlink
 
     const files = [
       {
