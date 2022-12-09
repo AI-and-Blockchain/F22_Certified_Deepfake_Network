@@ -21,7 +21,7 @@ set NODE_OPTIONS=--openssl-legacy-provider
 ```
 
 ## Local API dev
-The model API is hosted on http://deepfake-api-herokuapp.com/
+The model API is hosted on http://deepfake-api-herokuapp.com/predict
 
 ### Install model and API dependencies.
 ```
