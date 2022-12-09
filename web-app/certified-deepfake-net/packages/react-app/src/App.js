@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { ethers } from "ethers";
 import IPFS from "ipfs";
-
+import Resizer from "react-image-file-resizer";
 import logo from "./ethereumLogo.png";
 import { addresses, abis } from "@project/contracts";
 
@@ -69,6 +69,23 @@ function App() {
     reader.onerror = error => reject(error);
   });
 
+  // Resize file for test net purposes
+  const resizeFile = (file) =>
+  new Promise((resolve) => {
+    Resizer.imageFileResizer(
+      file,
+      14,
+      14,
+      "JPEG",
+      100,
+      0,
+      (uri) => {
+        resolve(uri);
+      },
+      "file"
+    );
+  });
+
   // Store ipfs hash in storage smart contract
   async function setFile(hash) {
     const ipfsWithSigner = ipfsContract.connect(defaultProvider.getSigner());
@@ -85,7 +102,13 @@ function App() {
     // let byteArray = new Int8Array(buffer);
     // console.log(buffer);
     // console.log(byteArray);
-    let hash = await toBase64(file)
+
+    // Resize file to 6x6 due to GET response limit :(
+    console.log(file);
+    let image = await resizeFile(file);
+    console.log(image);
+
+    let hash = await toBase64(image)
     let url = "https://deepfake-api.herokuapp.com/predict?image=" + hash
     console.log(url)
 
@@ -108,8 +131,8 @@ function App() {
     if (score >= 50) {
       const files = [
         {
-          path: file.name + file.path,
-          content: file,
+          path: image.name + image.path,
+          content: image,
         },
       ];
 
