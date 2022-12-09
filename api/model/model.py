@@ -2,9 +2,6 @@
 ########## Model FROM https://github.com/DariusAf/MesoNet/blob/master/ ############
 ###################################################################################
 
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
 
 from tensorflow.keras.layers import Input, Dense, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Dropout, Reshape, Concatenate, LeakyReLU
 from tensorflow.keras.optimizers import Adam
@@ -87,20 +84,5 @@ def load_model():
     """
 
     model = MesoInception4()
-    model.load('weights.h5')
+    model.load('model/weights.h5')
     return model
-
-if __name__ == "__main__":
-    
-    # Test model
-    image = cv2.imread('../test_data/116_264.jpeg')
-
-    # Scale each pixel to be in [0, 1]
-    image = image/255
-    image = np.array([cv2.resize(image, [256, 256])])
-    print(image.shape)
-    # cv2.imshow("", image)
-    # cv2.waitKey(0)
-    model = load_model()
-    pred = model.predict(image)[0][0]
-    print(f"Prediction: {pred:.3f}")

@@ -1,0 +1,15 @@
+aiohttp
+blinker
+brotlipy
+cached-property
+flask-cors
+opencv-python
+pip-chill
+pyjwt
+pyopenssl
+pysocks
+pyu2f
+scipy
+tensorflow-cpu
+gunicorn
+Pillow
